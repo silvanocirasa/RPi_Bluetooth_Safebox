@@ -1,12 +1,12 @@
 import bluetooth
-# Importing the GPIO library to use the GPIO pins of Raspberry pi
 import RPi.GPIO as GPIO
-led_pin = 18     # Initializing gpio 18 (pin12) for led
-GPIO.setmode(GPIO.BCM)  # Using BCM numbering
-GPIO.setup(led_pin, GPIO.OUT)   # Declaring the gpio 18 as output pin
+lock = 18     
+sensor = 17 
+GPIO.setmode(GPIO.BCM)  
+GPIO.setup(lock, GPIO.OUT)   
+GPIO.setup(sensor, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 host = ""
-port = 1        # Raspberry Pi uses port 1 for Bluetooth Communication
-# Creaitng Socket Bluetooth RFCOMM communication
+port = 1        
 server = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
 print('Bluetooth Socket Created')
 try:
@@ -14,30 +14,39 @@ try:
         print("Bluetooth Binding Completed")
 except:
         print("Bluetooth Binding Failed")
-server.listen(1) # One connection at a time
-# Server accepts the clients request and assigns a mac address.
+server.listen(1) 
 client, address = server.accept()
 print("Connected To", address)
 print("Client:", client)
 try:
         while True:
-                # Receivng the data.
-                data = client.recv(1024) # 1024 is the buffer size.
+
+                data = client.recv(1024)
                 print(data)
 
                 if data == b"1":
-                        GPIO.output(led_pin, True)
-                        send_data = "Light On "
-                elif data == b"0":
-                        GPIO.output(led_pin, False)
-                        send_data = "Light Off "
+                        GPIO.output(lock, True)
+                        print("Safebox ready to open")
+                        send_data = "Safebox ready to open"
+                        if GPIO.input(sensor) == GPIO.HIGH:
+                            print("Please open Safebox")
+                            send_data = "Please open Safebox"
+                        else:
+                            print("Safebox is already open")
+                            send_data = "Safebox is already open"
+                            
                 else:
-                        send_data = "Type 1 or 0 "
-                # Sending the data.
+                        GPIO.output(lock, False)
+                        print("Safebox ready to close")
+                        send_data = "Safebox ready to close "
+                        if GPIO.input(sensor) == GPIO.HIGH:
+                            print("Safebox Closed")
+                            send_data = "Safebox Closed"
+                        else:
+                            print("Please close Safebox")
+                            send_data = "Please close Safebox"
                 client.send(send_data)
 except:
-        # Making all the output pins LOW
         GPIO.cleanup()
-        # Closing the client and server connection
         client.close()
         server.close()
