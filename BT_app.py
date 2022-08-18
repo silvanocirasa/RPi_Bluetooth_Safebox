@@ -1,15 +1,19 @@
 import bluetooth
 import RPi.GPIO as GPIO
-lock = 18     
-sensor = 17 
+lock = 18 #Magnetschlösser 1+2
+sensor = 17 #Endschalter
 GPIO.setmode(GPIO.BCM)  
-GPIO.setup(lock, GPIO.OUT)   
-GPIO.setup(sensor, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+#definiere Magnetschlösser als Output
+GPIO.setup(lock, GPIO.OUT)    
+#definiere Endschalter als Pull-Down Input
+GPIO.setup(sensor, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
 host = ""
 port = 1        
-server = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+#definiere Bluetooth-Service
+server = bluetooth.BluetoothSocket(bluetooth.RFCOMM) 
 print('Bluetooth Socket Created')
-try:
+#versuche mit bluetooth service zu verbinden
+try: 
         server.bind((host, port))
         print("Bluetooth Binding Completed")
 except:
@@ -23,22 +27,28 @@ try:
 
                 data = client.recv(1024)
                 print(data)
-
+        #Anforderung von App zum Öffnen 
                 if data == b"1":
-                        GPIO.output(lock, True)
+                #setze Magnetschlösser auf 1 (öffnen)
+                        GPIO.output(lock, True) 
                         print("Safebox ready to open")
-                        send_data = "Safebox ready to open"
-                        if GPIO.input(sensor) == GPIO.HIGH:
+                        #sende Nachricht an App
+                        send_data = "Safebox ready to open" 
+                #Abfrage Endschalter (offen/geschlossen)
+                        if GPIO.input(sensor) == GPIO.HIGH: 
                             print("Please open Safebox")
                             send_data = "Please open Safebox"
                         else:
                             print("Safebox is already open")
                             send_data = "Safebox is already open"
-                            
+        #Anforderung von App zum Schliessen
                 else:
-                        GPIO.output(lock, False)
+                        #setze Magnetschlösser auf 0 (schliessen)
+                        GPIO.output(lock, False) 
                         print("Safebox ready to close")
-                        send_data = "Safebox ready to close "
+                        #sende Nachricht an App
+                        send_data = "Safebox ready to close " 
+                #Abfrage Endschalter (offen/geschlossen)
                         if GPIO.input(sensor) == GPIO.HIGH:
                             print("Safebox Closed")
                             send_data = "Safebox Closed"
